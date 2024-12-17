@@ -88,3 +88,8 @@ variable "secret_label_order" {
   EOT
 }
 
+variable "log_retention_days" {
+  description = "Specifies the number of days you want to retain log events in log group for Lambda."
+  type        = number
+  default     = 30
+}

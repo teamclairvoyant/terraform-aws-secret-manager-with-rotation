@@ -143,6 +143,39 @@ resource "aws_lambda_function" "default" {
   tags = module.this.tags
 }
 
+resource "aws_cloudwatch_log_group" "default" {
+  name              = "/aws/lambda/${aws_lambda_function.default.function_name}"
+  retention_in_days = var.log_retention_days
+
+  tags = module.this.tags
+}
+
+data "aws_iam_policy_document" "default" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [aws_cloudwatch_log_group.default.arn]
+  }
+}
+
+resource "aws_iam_policy" "default" {
+  name        = replace(replace(aws_lambda_function.default.function_name,"_",""),"-","")
+  path        = "/"
+  description = "IAM policy for logging from a user password_rotation_lambda"
+  policy      = data.aws_iam_policy_document.default.json
+}
+
+resource "aws_iam_role_policy_attachment" "default" {
+  role       = aws_iam_role.default.name
+  policy_arn = aws_iam_policy.default.arn
+}
+
 resource "aws_lambda_permission" "default" {
   function_name = aws_lambda_function.default.function_name
   statement_id  = "AllowExecutionSecretManager"
